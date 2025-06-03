@@ -1,15 +1,23 @@
 """
 SecuraMind Agent Engine
 - Routes inputs to the appropriate tools
-- Provides a unified API for future multi-agent chaining or memory
+- Supports optional Modal-powered LLM fixer
+- Unified API for agent chaining, memory, and tool orchestration
 """
 
 from agent.file_scanner import scan_file
 from agent.url_checker import scan_url
 from agent.log_analyzer import analyze_log
 from agent.code_reviewer import review_code
-from agent.fixer import fix_code
 from agent.encryptor import encrypt_file, decrypt_file
+
+# Try importing Modal-based fixer (optional)
+try:
+    from fixer_modal import fix_code_modal
+    USE_MODAL_FIXER = True
+except ImportError:
+    from agent.fixer import fix_code as local_fix_code
+    USE_MODAL_FIXER = False
 
 
 class SecuraMindAgent:
@@ -27,7 +35,9 @@ class SecuraMindAgent:
         return review_code(code)
 
     def fix_code(self, code: str, issues: list) -> dict:
-        return fix_code(code, issues)
+        if USE_MODAL_FIXER:
+            return fix_code_modal.remote(code, issues)
+        return local_fix_code(code, issues)
 
     def encrypt_file(self, filepath: str) -> dict:
         return encrypt_file(filepath)
