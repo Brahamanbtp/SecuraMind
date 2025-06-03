@@ -1,4 +1,3 @@
-# url_checker.py
 """
 URL Checker Tool for SecuraMind
 - Performs heuristic analysis of URLs
