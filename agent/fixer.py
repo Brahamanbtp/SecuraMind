@@ -3,17 +3,17 @@
 import os
 import modal
 
-# Set up Modal stub
-stub = modal.Stub("securamind-fixer")
+# ✅ Updated from Stub to App (Modal's latest version)
+stub = modal.App("securamind-fixer")
 
-# Use default Modal Python image with requests preinstalled
+# Use default Modal image with requests installed
 image = modal.Image.debian_slim().pip_install("requests")
 
 @stub.function(image=image, secret=modal.Secret.from_name("securamind-api-keys"))
 def fix_code_modal(code: str, issues: list) -> dict:
     import requests
 
-    API_KEY = os.environ.get("ak-2iQ1O30002OYfnmuBBhbHv")
+    API_KEY = os.environ.get("MISTRAL_API_KEY")  # ✅ Use named ENV var, not hardcoded key
 
     def build_prompt(code, issues):
         issue_summary = "\n".join(
