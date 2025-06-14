@@ -1,7 +1,5 @@
 # 🔐 SecuraMind — AI-Powered Secure Code Assistant
 
-![SecuraMind Logo](./assets/securamind-banner.png)
-
 SecuraMind is a secure coding assistant that helps developers identify and fix code vulnerabilities using powerful LLMs. Designed for performance, scalability, and integration into CI pipelines, it empowers developers to write secure code — fast.
 
 > 🧠 Powered by **LLM inference** via [Modal Labs](https://modal.com)  
