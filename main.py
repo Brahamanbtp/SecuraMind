@@ -64,9 +64,16 @@ os.system("rm -rf /")
         print("✅ No issues to fix.")
 
 
-# Entry point
+# ✅ Entry point with CLI flags
 if __name__ == "__main__":
-    if len(sys.argv) > 1 and sys.argv[1] == "test":
-        run_test()
+    if len(sys.argv) > 1:
+        if sys.argv[1] == "test":
+            run_test()
+        elif sys.argv[1] == "cloud":
+            print("☁️ Launching Modal Cloud Fixer...")
+            os.system("modal run -m agent.fixer")
+        else:
+            print("⚠️ Unknown option. Launching Gradio UI instead...")
+            launch_ui()
     else:
         launch_ui()
