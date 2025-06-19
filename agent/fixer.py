@@ -1,19 +1,22 @@
-# fixer_modal.py (Cloud-based fixer for SecuraMind using Modal and Mistral)
+# agent/fixer.py — Modal 1.0.2 compatible with local test entrypoint
 
 import os
 import modal
 
-# ✅ Updated from Stub to App (Modal's latest version)
-stub = modal.App("securamind-fixer")
+# Modal App and image setup
+app = modal.App("securamind-fixer")
 
-# Use default Modal image with requests installed
 image = modal.Image.debian_slim().pip_install("requests")
 
-@stub.function(image=image, secret=modal.Secret.from_name("securamind-api-keys"))
+# Cloud function to fix insecure code using Mistral
+@app.function(
+    image=image,
+    secrets=[modal.Secret.from_name("securamind-api-keys")]
+)
 def fix_code_modal(code: str, issues: list) -> dict:
     import requests
 
-    API_KEY = os.environ.get("MISTRAL_API_KEY")  # ✅ Use named ENV var, not hardcoded key
+    API_KEY = os.environ.get("MISTRAL_API_KEY")
 
     def build_prompt(code, issues):
         issue_summary = "\n".join(
@@ -56,3 +59,22 @@ Return only the explanation followed by the fixed code.
         return {"explanation_and_fix": output}
     except Exception as e:
         return {"error": str(e)}
+
+# ✅ Local test entrypoint (called via `modal run -m agent.fixer`)
+# Optional: Local test entrypoint (for modal run)
+@app.local_entrypoint()
+def main():
+    test_code = '''
+import os
+password = "1234"
+os.system("rm -rf /")
+'''
+    test_issues = [
+        {"line_number": 2, "line": 'password = "1234"', "issue": "Hardcoded password/API key"},
+        {"line_number": 3, "line": 'os.system("rm -rf /")', "issue": "Use of os.system()"}
+    ]
+
+    # ✅ Use .local() to invoke Modal function locally
+    result = fix_code_modal.local(test_code, test_issues)
+    print("🧪 Fix result:\n", result)
+
