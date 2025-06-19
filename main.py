@@ -7,7 +7,7 @@ Main entry point for SecuraMind
 import os
 import sys
 
-# ✅ Add project root to Python path (fix for ModuleNotFoundError)
+# ✅ Ensure project root is on Python path
 project_root = os.path.dirname(os.path.abspath(__file__))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
@@ -15,33 +15,36 @@ if project_root not in sys.path:
 from core.agent_engine import SecuraMindAgent
 
 
-# Optional: Run Gradio UI
 def launch_ui():
+    """
+    Launch the Gradio-based UI.
+    """
     print("🔧 Launching Gradio UI...")
     os.system("python ui/gradio_ui.py")
 
 
-# Optional: CLI test example
 def run_test():
+    """
+    Run predefined tests on the agent tools.
+    """
     agent = SecuraMindAgent()
+    print("✅ SecuraMind Agent Test Started")
     print("🔍 Supported tasks:", agent.get_supported_tasks())
 
-    # Example 1: Scan File
+    # Test 1: File scan
     test_file = "sample.txt"
-    if os.path.exists(test_file):
-        print("🗂️ File Scan Result:")
-        print(agent.scan_file(test_file))
-    else:
+    if not os.path.exists(test_file):
         with open(test_file, "w") as f:
             f.write('eval("2+2")\npassword = "1234"\nos.system("rm -rf /")')
         print("📄 Sample file created for scanning.")
-        print(agent.scan_file(test_file))
+    print("🗂️ File Scan Result:")
+    print(agent.scan_file(test_file))
 
-    # Example 2: URL Check
+    # Test 2: URL scan
     print("🌐 URL Check:")
     print(agent.scan_url("http://example.com"))
 
-    # Example 3: Code Review
+    # Test 3: Static code analysis
     sample_code = '''
 import os
 password = "1234"
@@ -51,13 +54,17 @@ os.system("rm -rf /")
     result = agent.review_code(sample_code)
     print(result)
 
-    # Example 4: Code Fixing
+    # Test 4: Secure fix (Modal or fallback)
     if result.get("issue_count", 0) > 0:
         print("🛠️ Fixing Code:")
         fix_result = agent.fix_code(sample_code, result["issues"])
+        print("✅ Fix Result:")
         print(fix_result)
+    else:
+        print("✅ No issues to fix.")
 
 
+# Entry point
 if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "test":
         run_test()
