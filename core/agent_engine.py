@@ -50,15 +50,22 @@ class SecuraMindAgent:
         return review_code(code)
 
     def fix_code(self, code: str, issues: list) -> dict:
-        """Use an LLM (Modal or Local) to fix code based on detected issues."""
+        """
+        Use an LLM (Modal or Local) to fix code based on detected issues.
+        - Uses .local() for modal run
+        - Uses .remote() for CLI calls (main.py)
+        """
         if IS_MODAL_FUNCTION:
             print("🛰️ Fixing with Modal cloud function...")
-
-            # Determine environment: modal run or external script
-            if modal.is_local():
-                return fix_code_modal.call(code, issues)
-            else:
-                return fix_code_modal.spawn(code, issues).get()
+            try:
+                # Use .local() when inside modal run
+                if modal.is_local():
+                    return fix_code_modal.local(code, issues)
+                else:
+                    # Fallback for CLI/test runner
+                    return fix_code_modal.remote(code, issues)
+            except Exception as e:
+                return {"error": f"❌ Modal function call failed: {str(e)}"}
         else:
             print("🛠️ Fixing with local fallback...")
             return fix_code_modal(code, issues)
