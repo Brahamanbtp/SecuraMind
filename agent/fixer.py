@@ -17,8 +17,6 @@ try:
     def fix_code_modal(code: str, issues: list) -> dict:
         import requests
 
-        API_KEY = os.environ.get("MISTRAL_API_KEY")
-
         def build_prompt(code, issues):
             issue_summary = "\n".join(
                 f"- {i['issue']} on line {i['line_number']}: {i['line']}" for i in issues
@@ -43,6 +41,17 @@ Return only the explanation followed by the fixed code.
         prompt = build_prompt(code, issues)
 
         def call_mistral(prompt):
+            # ✅ DEBUG: List all available environment variables
+            print("🔍 ENV VARS:\n", dict(os.environ))
+
+            try:
+                # ✅ Use explicit key to raise error if missing
+                API_KEY = os.environ["MISTRAL_API_KEY"]
+                print("🔑 API_KEY loaded: ✅ Yes")
+            except KeyError:
+                print("🔑 API_KEY loaded: ❌ No (MISTRAL_API_KEY not found)")
+                return "❌ API Key not loaded from Modal secret (missing MISTRAL_API_KEY)"
+
             url = "https://api.mistral.ai/v1/chat/completions"
             headers = {"Authorization": f"Bearer {API_KEY}"}
             data = {
@@ -51,6 +60,7 @@ Return only the explanation followed by the fixed code.
                 "temperature": 0.4,
                 "max_tokens": 800
             }
+
             r = requests.post(url, json=data, headers=headers)
             r.raise_for_status()
             return r.json()["choices"][0]["message"]["content"]
@@ -64,7 +74,7 @@ Return only the explanation followed by the fixed code.
     IS_MODAL_FUNCTION = True
 
 except ImportError:
-    # Local fallback definition if Modal isn't available
+    # Local fallback if Modal not available
     def fix_code_modal(code: str, issues: list) -> dict:
         return {
             "error": "Modal is not available in this environment. Cloud fixing disabled."
@@ -72,7 +82,7 @@ except ImportError:
 
     IS_MODAL_FUNCTION = False
 
-# ✅ Local test entrypoint (called via `modal run -m agent.fixer`)
+# ✅ Local test entrypoint (for `modal run -m agent.fixer`)
 if IS_MODAL_FUNCTION:
     @app.local_entrypoint()
     def main():
@@ -86,6 +96,6 @@ os.system("rm -rf /")
             {"line_number": 3, "line": 'os.system("rm -rf /")', "issue": "Use of os.system()"}
         ]
 
-        # ✅ Use .local() to invoke Modal function locally during development
+        # ✅ Call function locally
         result = fix_code_modal.local(test_code, test_issues)
         print("🧪 Fix result:\n", result)
