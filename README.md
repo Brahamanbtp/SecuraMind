@@ -1,3 +1,14 @@
+---
+title: SecuraMind
+emoji: 🛡️
+colorFrom: gray
+colorTo: blue
+sdk: gradio
+sdk_version: 4.18.0
+app_file: ui/app.py
+license: apache-2.0
+---
+
 # 🔐 SecuraMind — AI-Powered Secure Code Assistant
 
 SecuraMind is a secure coding assistant that helps developers identify and fix code vulnerabilities using powerful LLMs. Designed for performance, scalability, and integration into CI pipelines, it empowers developers to write secure code — fast.
@@ -21,12 +32,12 @@ SecuraMind is a secure coding assistant that helps developers identify and fix c
 
 ## ⚙️ Tech Stack
 
-- **Python 3.10**
+- **Python 3.10+**
 - **Modal Labs** (LLM inference)
 - **OpenAI / Claude / Mistral API**
+- **Gradio** (for frontend interface)
 - **FastAPI** (for public API layer)
-- **Colab / Jupyter Notebooks** (demo + dev)
-- **Tailwind UI** (planned frontend)
+- **Tailwind UI** (planned frontend styling)
 - **GitHub Actions** (planned CI integration)
 
 ---
@@ -36,63 +47,57 @@ SecuraMind is a secure coding assistant that helps developers identify and fix c
 ### 1. Clone the Repo
 
 ```bash
-git clone https://github.com/your-username/securamind.git
-cd securamind
+git clone https://huggingface.co/spaces/Brahamanbtp/SecuraMind
+cd SecuraMind
 ```
 
-### 2. Install Modal
+### 2. Install Requirements
 
 ```bash
-pip install modal
+pip install -r requirements.txt
 ```
 
 ### 3. Authenticate with Modal
-
-**Recommended:** Authenticate via your local terminal:
 
 ```bash
 modal token new
 ```
 
-Then follow the link in your browser to log in. This stores your auth token locally.
-
-> 💡 If using Google Colab, run this locally first — then your Colab will work too.
+> Follow the link shown in terminal to authenticate via browser.  
+> 💡 This stores your auth token locally so Modal functions can run.
 
 ---
 
-## 🧠 Example: LLM-Based Code Fix with Modal
+## 🧠 Example: LLM-Based Code Fix (via Modal)
 
 ```python
 # fixer_modal.py
-from modal import Stub, Image
+from modal import App, Image
 
-image = Image.debian_slim().pip_install("openai")
-stub = Stub("securamind-fixer", image=image)
+image = Image.debian_slim().pip_install("requests")
+app = App("securamind-fixer", image=image)
 
-@stub.function()
+@app.function()
 def fix_code_modal(code: str, issues: list):
-    import openai
-    openai.api_key = "sk-..."  # Recommended: use Modal secrets
-    # Simulated LLM fix (replace with actual call)
-    return f"[MODAL FIX] Fixed {len(issues)} issues in {len(code)} characters."
+    # Secure call to LLM (e.g., Mistral/OpenAI) with prompt formatting
+    ...
 ```
 
-#### Call It in Code
+#### Calling the Fixer Function
 
 ```python
-from fixer_modal import fix_code_modal
-
-fixed = fix_code_modal.remote("vulnerable_code_here()", [{"issue": "XSS"}])
+from agent.fixer import fix_code_modal
+fixed = fix_code_modal.remote(code, issues)
 ```
 
 ---
 
-## 🌐 Optional: Public API Endpoint
+## 🌐 Deploy Public API (Optional)
 
 ```python
-@stub.function()
+@app.function()
 @asgi_app()
-def web_app():
+def web_api():
     from fastapi import FastAPI, Request
     app = FastAPI()
 
@@ -107,21 +112,20 @@ def web_app():
 modal deploy fixer_modal.py
 ```
 
-Now accessible at:
+Access it at:
 
 ```
-https://<username>--securamind-fixer.modal.run/fix
+https://<your-username>--securamind-fixer.modal.run/fix
 ```
 
 ---
 
-## 🧰 Roadmap (Future Works)
+## 🧰 Roadmap (Planned Features)
 
-- 🔄 Real-time CI integration
-- 🧩 VSCode plugin
-- 🔍 Inline code annotations
-- 📊 Security trend dashboards
-- 🔐 Role-based analysis workflows
+- 🔄 GitHub CI/CD Secure PRs
+- 🧩 VSCode plugin for inline scans
+- 📊 Dashboards for org-wide security posture
+- 🔐 Role-based analyst workflows
 
 ---
 
@@ -138,18 +142,17 @@ https://<username>--securamind-fixer.modal.run/fix
 
 ## 🤝 Contributing
 
-Pull requests are welcome! For major changes, please open an issue first to discuss what you’d like to change.
+Pull requests are welcome! For major changes, please open an issue first to discuss improvements or feature requests.
 
 ---
 
 ## 📄 License
 
-[MIT](LICENSE)
+This project is licensed under the [Apache 2.0 License](LICENSE).
 
 ---
 
 ## 📬 Contact
 
 - **Author:** Pranay Sharma  
--**Email:**pranaysharma5626@gmail.com 
----
+- **Email:** pranaysharma5626@gmail.com
