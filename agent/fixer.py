@@ -41,11 +41,8 @@ Return only the explanation followed by the fixed code.
         prompt = build_prompt(code, issues)
 
         def call_mistral(prompt):
-            # ✅ DEBUG: List all available environment variables
-            print("🔍 ENV VARS:\n", dict(os.environ))
-
             try:
-                # ✅ Use explicit key to raise error if missing
+                # Explicitly raise if key is missing
                 API_KEY = os.environ["MISTRAL_API_KEY"]
                 print("🔑 API_KEY loaded: ✅ Yes")
             except KeyError:
@@ -61,9 +58,9 @@ Return only the explanation followed by the fixed code.
                 "max_tokens": 800
             }
 
-            r = requests.post(url, json=data, headers=headers)
-            r.raise_for_status()
-            return r.json()["choices"][0]["message"]["content"]
+            response = requests.post(url, json=data, headers=headers)
+            response.raise_for_status()
+            return response.json()["choices"][0]["message"]["content"]
 
         try:
             output = call_mistral(prompt)
@@ -74,7 +71,7 @@ Return only the explanation followed by the fixed code.
     IS_MODAL_FUNCTION = True
 
 except ImportError:
-    # Local fallback if Modal not available
+    # Fallback for environments without Modal
     def fix_code_modal(code: str, issues: list) -> dict:
         return {
             "error": "Modal is not available in this environment. Cloud fixing disabled."
@@ -82,7 +79,7 @@ except ImportError:
 
     IS_MODAL_FUNCTION = False
 
-# ✅ Local test entrypoint (for `modal run -m agent.fixer`)
+# ✅ Local test entrypoint (use: modal run -m agent.fixer)
 if IS_MODAL_FUNCTION:
     @app.local_entrypoint()
     def main():
@@ -96,6 +93,5 @@ os.system("rm -rf /")
             {"line_number": 3, "line": 'os.system("rm -rf /")', "issue": "Use of os.system()"}
         ]
 
-        # ✅ Call function locally
-        result = fix_code_modal.local(test_code, test_issues)
+        result = fix_code_modal.remote(test_code, test_issues)
         print("🧪 Fix result:\n", result)
