@@ -8,7 +8,7 @@ SecuraMind Agent Engine
 # Standard Library
 import importlib
 
-# Agent tool imports (relative to project root)
+# Agent tool imports
 from agent.file_scanner import scan_file
 from agent.url_checker import scan_url
 from agent.log_analyzer import analyze_log
@@ -17,15 +17,12 @@ from agent.encryptor import encrypt_file, decrypt_file
 
 # Optional Modal-based fixer support
 try:
-    from agent.fixer import fix_code_modal  # Modal cloud-based function
+    from agent.fixer import fix_code_modal, IS_MODAL_FUNCTION
     import modal
-    IS_MODAL_FUNCTION = True
 except ImportError:
-    try:
-        from agent.fixer import fix_code as fix_code_modal  # Local fallback
-        IS_MODAL_FUNCTION = False
-    except ImportError:
-        raise ImportError("❌ Neither Modal-based nor local fixer could be loaded. Check module paths.")
+    IS_MODAL_FUNCTION = False
+    fix_code_modal = None
+    print("⚠️ Modal not available. Code fixing via cloud is disabled.")
 
 
 class SecuraMindAgent:
@@ -34,52 +31,44 @@ class SecuraMindAgent:
     """
 
     def scan_file(self, filepath: str) -> dict:
-        """Scan a file for threats or suspicious content."""
         return scan_file(filepath)
 
     def scan_url(self, url: str) -> dict:
-        """Check a URL against security databases or heuristic rules."""
         return scan_url(url)
 
     def analyze_logs(self, log_text: str) -> dict:
-        """Analyze logs for patterns and anomalies."""
         return analyze_log(log_text)
 
     def review_code(self, code: str) -> dict:
-        """Perform static code analysis for OWASP and common risks."""
         return review_code(code)
 
     def fix_code(self, code: str, issues: list) -> dict:
-        """
-        Use an LLM (Modal or Local) to fix code based on detected issues.
-        - Uses .local() for modal run
-        - Uses .remote() for CLI calls (main.py)
-        """
+        if not fix_code_modal:
+            return {"error": "❌ No fixer implementation available."}
+
         if IS_MODAL_FUNCTION:
             print("🛰️ Fixing with Modal cloud function...")
             try:
-                # Use .local() when inside modal run
-                if modal.is_local():
+                if modal.is_local():  # Inside modal run
                     return fix_code_modal.local(code, issues)
-                else:
-                    # Fallback for CLI/test runner
+                else:  # CLI or Gradio context
                     return fix_code_modal.remote(code, issues)
             except Exception as e:
                 return {"error": f"❌ Modal function call failed: {str(e)}"}
         else:
             print("🛠️ Fixing with local fallback...")
-            return fix_code_modal(code, issues)
+            try:
+                return fix_code_modal(code, issues)
+            except Exception as e:
+                return {"error": f"❌ Local fixer failed: {str(e)}"}
 
     def encrypt_file(self, filepath: str) -> dict:
-        """Encrypt a file using symmetric key cryptography."""
         return encrypt_file(filepath)
 
     def decrypt_file(self, enc_file: str, key_file: str, nonce_file: str) -> dict:
-        """Decrypt a previously encrypted file using stored key/nonce."""
         return decrypt_file(enc_file, key_file, nonce_file)
 
     def get_supported_tasks(self) -> list:
-        """Return a list of all supported agent tools/tasks."""
         return [
             "scan_file",
             "scan_url",
