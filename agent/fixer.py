@@ -1,15 +1,19 @@
-# agent/fixer.py — Modal 1.0.2 compatible with local test entrypoint
+# agent/fixer.py — Modal 1.0.2 compatible with local test + remote fixing + dotenv
 
 import os
+from dotenv import load_dotenv
+
+# ✅ Load environment variables from .env for local testing
+load_dotenv()
 
 try:
     import modal
 
-    # Modal App and image setup
+    # ✅ Define Modal App and image (correct API)
     app = modal.App("securamind-fixer")
     image = modal.Image.debian_slim().pip_install("requests")
 
-    # Cloud function to fix insecure code using Mistral
+    # ✅ Modal cloud function with secret for remote access
     @app.function(
         image=image,
         secrets=[modal.Secret.from_name("securamind-api-keys")]
@@ -42,15 +46,14 @@ Return only the explanation followed by the fixed code.
 
         def call_mistral(prompt):
             try:
-                # Explicitly raise if key is missing
-                API_KEY = os.environ["MISTRAL_API_KEY"]
+                api_key = os.environ["MISTRAL_API_KEY"]
                 print("🔑 API_KEY loaded: ✅ Yes")
             except KeyError:
                 print("🔑 API_KEY loaded: ❌ No (MISTRAL_API_KEY not found)")
                 return "❌ API Key not loaded from Modal secret (missing MISTRAL_API_KEY)"
 
             url = "https://api.mistral.ai/v1/chat/completions"
-            headers = {"Authorization": f"Bearer {API_KEY}"}
+            headers = {"Authorization": f"Bearer {api_key}"}
             data = {
                 "model": "mistral-small",
                 "messages": [{"role": "user", "content": prompt}],
@@ -63,15 +66,15 @@ Return only the explanation followed by the fixed code.
             return response.json()["choices"][0]["message"]["content"]
 
         try:
-            output = call_mistral(prompt)
-            return {"explanation_and_fix": output}
+            result = call_mistral(prompt)
+            return {"explanation_and_fix": result}
         except Exception as e:
             return {"error": str(e)}
 
     IS_MODAL_FUNCTION = True
 
 except ImportError:
-    # Fallback for environments without Modal
+    # Fallback: Modal not available
     def fix_code_modal(code: str, issues: list) -> dict:
         return {
             "error": "Modal is not available in this environment. Cloud fixing disabled."
@@ -79,7 +82,7 @@ except ImportError:
 
     IS_MODAL_FUNCTION = False
 
-# ✅ Local test entrypoint (use: modal run -m agent.fixer)
+# ✅ Local test entrypoint (used via: `modal run -m agent.fixer`)
 if IS_MODAL_FUNCTION:
     @app.local_entrypoint()
     def main():
@@ -92,6 +95,5 @@ os.system("rm -rf /")
             {"line_number": 2, "line": 'password = "1234"', "issue": "Hardcoded password/API key"},
             {"line_number": 3, "line": 'os.system("rm -rf /")', "issue": "Use of os.system()"}
         ]
-
         result = fix_code_modal.remote(test_code, test_issues)
         print("🧪 Fix result:\n", result)
